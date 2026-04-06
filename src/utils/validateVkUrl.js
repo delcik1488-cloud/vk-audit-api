@@ -1,32 +1,34 @@
-function makeError(message, status = 400) {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-}
+function validateVkUrl(input) {
+  const raw = String(input || '').trim();
 
-function validateVkUrl(url) {
-  if (!url || typeof url !== 'string') {
-    throw makeError('Передай ссылку на VK-сообщество в поле url');
+  if (!raw) {
+    const error = new Error('Вставь ссылку на сообщество VK или его username.');
+    error.status = 400;
+    throw error;
   }
 
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch (error) {
-    throw makeError('Некорректный URL');
+  const cleaned = raw
+    .replace(/\s+/g, '')
+    .replace(/^@+/, '');
+
+  if (!cleaned) {
+    const error = new Error('Вставь ссылку на сообщество VK или его username.');
+    error.status = 400;
+    throw error;
   }
 
-  const allowedHosts = new Set(['vk.com', 'www.vk.com', 'm.vk.com']);
-  if (!allowedHosts.has(parsed.hostname)) {
-    throw makeError('Ссылка должна вести на vk.com');
+  if (
+    /^https?:\/\//i.test(cleaned) ||
+    /^(vk\.com|m\.vk\.com|vk\.ru)\//i.test(cleaned) ||
+    /^(club|public)\d+$/i.test(cleaned) ||
+    /^[a-zA-Z0-9._]+$/i.test(cleaned)
+  ) {
+    return true;
   }
 
-  const path = parsed.pathname.replace(/^\/+|\/+$/g, '');
-  if (!path) {
-    throw makeError('Укажи ссылку на конкретное сообщество, а не просто на главную VK');
-  }
-
-  return true;
+  const error = new Error('Некорректный формат ссылки или username VK.');
+  error.status = 400;
+  throw error;
 }
 
 module.exports = validateVkUrl;
